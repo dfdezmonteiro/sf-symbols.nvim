@@ -1,23 +1,33 @@
 # sf-symbols.nvim
 
-A lightweight Neovim plugin to search SF Symbols names with Telescope and insert or copy the selected symbol wrapped in double quotes.
+Search and insert Apple SF Symbols directly from Neovim.
 
-It only stores and uses SF Symbols names.
+`sf-symbols.nvim` lets you quickly search SF Symbol names and insert them into your buffer. It is useful when working with Swift, SwiftUI, iOS, macOS, visionOS, watchOS, tvOS, or any project where SF Symbol names are needed.
 
 ## Features
 
-- Telescope picker for SF Symbols.
-- Fuzzy search by symbol name.
-- Inserts the selected symbol at the cursor.
-- Inserts symbols wrapped in double quotes.
-- Copies the selected symbol to the clipboard with `<C-y>`.
-- Simple static data source.
-- Suitable for Swift `Image(systemName:)` usage.
+- Search SF Symbols from Neovim
+- Insert the selected symbol name at the cursor position
+- Copy the selected symbol name to the clipboard when supported by the active picker
+- Optional quotes around inserted symbols
+- Picker-agnostic architecture
+- Supports:
+  - Telescope
+  - fzf-lua
+  - snacks.nvim
+  - `vim.ui.select`
 
 ## Requirements
 
-- Neovim
-- [`telescope.nvim`](https://github.com/nvim-telescope/telescope.nvim)
+- Neovim `0.9+`
+
+Optional picker dependencies:
+
+- [`nvim-telescope/telescope.nvim`](https://github.com/nvim-telescope/telescope.nvim)
+- [`ibhagwan/fzf-lua`](https://github.com/ibhagwan/fzf-lua)
+- [`folke/snacks.nvim`](https://github.com/folke/snacks.nvim)
+
+If no supported picker is found, the plugin falls back to `vim.ui.select`.
 
 ## Installation
 
@@ -26,174 +36,327 @@ It only stores and uses SF Symbols names.
 ```lua
 {
   "dfdezmonteiro/sf-symbols.nvim",
-  dependencies = {
-    "nvim-telescope/telescope.nvim",
-  },
   config = function()
-    require("sf-symbols").setup()
+    require("sf-symbols").setup({
+      picker = "auto",
+    })
   end,
 }
 ```
 
+With Telescope:
+
+```lua
+{
+  "dfdezmonteiro/sf-symbols.nvim",
+  dependencies = {
+    "nvim-telescope/telescope.nvim",
+  },
+  config = function()
+    require("sf-symbols").setup({
+      picker = "telescope",
+    })
+  end,
+}
+```
+
+With fzf-lua:
+
+```lua
+{
+  "dfdezmonteiro/sf-symbols.nvim",
+  dependencies = {
+    "ibhagwan/fzf-lua",
+  },
+  config = function()
+    require("sf-symbols").setup({
+      picker = "fzf_lua",
+    })
+  end,
+}
+```
+
+With snacks.nvim:
+
+```lua
+{
+  "dfdezmonteiro/sf-symbols.nvim",
+  dependencies = {
+    "folke/snacks.nvim",
+  },
+  config = function()
+    require("sf-symbols").setup({
+      picker = "snacks",
+    })
+  end,
+}
+```
+
+## Configuration
+
+Default configuration:
+
+```lua
+require("sf-symbols").setup({
+  picker = "auto",
+  insert_quotes = true,
+})
+```
+
+Available options:
+
+| Option          |      Type |  Default | Description                             |
+| --------------- | --------: | -------: | --------------------------------------- |
+| `picker`        |  `string` | `"auto"` | Picker backend to use                   |
+| `insert_quotes` | `boolean` |   `true` | Insert symbols wrapped in double quotes |
+
+Available picker values:
+
+```lua
+"auto"
+"telescope"
+"fzf_lua"
+"snacks"
+"vim_ui_select"
+```
+
+## Picker resolution
+
+When using:
+
+```lua
+picker = "auto"
+```
+
+the plugin resolves the picker in this order:
+
+1. `snacks`
+2. `fzf_lua`
+3. `telescope`
+4. `vim_ui_select`
+
+`vim_ui_select` is always available because it uses Neovim’s built-in `vim.ui.select`.
+
 ## Usage
 
-Run:
+Open the SF Symbols picker:
 
 ```vim
 :SFSymbols
 ```
 
-Search for a symbol name and select it.
-
-### Insert action
-
-Press `<CR>` / `Enter` to insert the selected symbol at the current cursor position, wrapped in double quotes.
-
-Example selected symbol:
-
-```text
-folder.fill
-```
-
-Inserted text:
-
-```swift
-"folder.fill"
-```
-
-Example usage in Swift:
-
-```swift
-Image(systemName: "folder.fill")
-```
-
-### Copy action
-
-Press `<C-y>` to copy the selected symbol to the clipboard, also wrapped in double quotes.
-
-Example selected symbol:
-
-```text
-folder.fill
-```
-
-Copied text:
-
-```text
-"folder.fill"
-```
-
-This action is available in both Telescope insert mode and normal mode.
-
-## Recommended keymap
-
-```lua
-vim.keymap.set("n", "<leader>fs", function()
-  require("sf-symbols").pick()
-end, { desc = "SF Symbols" })
-```
-
-Alternative:
-
-```lua
-vim.keymap.set("n", "<leader>fs", "<cmd>SFSymbols<cr>", { desc = "SF Symbols" })
-```
-
-## Project structure
-
-```text
-sf-symbols.nvim/
-├── .gitignore
-├── LICENSE
-├── README.md
-├── stylua.toml
-└── lua/
-    └── sf-symbols/
-        ├── init.lua
-        ├── telescope.lua
-        └── data.lua
-```
-
-## Files
-
-### `lua/sf-symbols/init.lua`
-
-Plugin entry point.
-
-It registers the command:
+Use a specific picker for one call:
 
 ```vim
-:SFSymbols
+:SFSymbols telescope
+:SFSymbols fzf_lua
+:SFSymbols snacks
+:SFSymbols vim_ui_select
 ```
 
-It also exposes:
+Or from Lua:
 
 ```lua
 require("sf-symbols").pick()
 ```
 
-### `lua/sf-symbols/telescope.lua`
-
-Telescope picker.
-
-Responsibilities:
-
-- Load the SF Symbols list.
-- Show all symbols in a Telescope picker.
-- Allow fuzzy search.
-- Insert the selected symbol at the cursor.
-- Copy the selected symbol to the clipboard.
-- Wrap inserted and copied symbols in double quotes.
-
-### `lua/sf-symbols/data.lua`
-
-Static data file containing SF Symbols names.
-
-Expected format:
+With a specific picker:
 
 ```lua
-local M = {}
-
-M.symbols = {
-  "folder",
-  "folder.fill",
-  "square.and.pencil",
-  "magnifyingglass",
-}
-
-return M
+require("sf-symbols").pick({
+  picker = "telescope",
+})
 ```
 
-## Data source
+## Keymaps
 
-The plugin expects a plain list of SF Symbols names.
+Example keymap:
 
-Recommended source:
+```lua
+vim.keymap.set("n", "<leader>ss", function()
+  require("sf-symbols").pick()
+end, {
+  desc = "Search SF Symbols",
+})
+```
 
-1. Open the official SF Symbols app.
-2. Select all symbols.
-3. Copy names.
-4. Paste the names into `lua/sf-symbols/data.lua`.
+Example with a specific picker:
 
-Use only names.
+```lua
+vim.keymap.set("n", "<leader>sS", function()
+  require("sf-symbols").pick({
+    picker = "fzf_lua",
+  })
+end, {
+  desc = "Search SF Symbols with fzf-lua",
+})
+```
 
-## Limitations
+## Insert behavior
 
-This plugin is not a language server.
+By default, selected symbols are inserted wrapped in double quotes.
 
-It does not validate:
+For example, selecting:
 
-- platform availability
-- iOS/macOS version availability
-- rendering mode
-- variable color support
-- localization
-- symbol variants
-- target SDK compatibility
+```text
+square.and.arrow.up
+```
 
-It only searches, inserts, and copies SF Symbol names.
+inserts:
 
-Use Xcode and Apple tooling for semantic validation.
+```swift
+"square.and.arrow.up"
+```
+
+This is useful for SwiftUI:
+
+```swift
+Image(systemName: "square.and.arrow.up")
+```
+
+To insert the raw symbol name without quotes:
+
+```lua
+require("sf-symbols").setup({
+  insert_quotes = false,
+})
+```
+
+Then selecting:
+
+```text
+square.and.arrow.up
+```
+
+inserts:
+
+```text
+square.and.arrow.up
+```
+
+## Copy behavior
+
+Some picker backends support copying the selected symbol to the clipboard.
+
+Default copy mapping:
+
+```text
+<C-y>
+```
+
+Supported by:
+
+| Picker        | Insert | Copy |
+| ------------- | -----: | ---: |
+| Telescope     |    Yes |  Yes |
+| fzf-lua       |    Yes |  Yes |
+| snacks.nvim   |    Yes |  Yes |
+| vim.ui.select |    Yes |   No |
+
+`vim.ui.select` is intentionally minimal and does not provide portable custom key mappings.
+
+## Examples
+
+### SwiftUI
+
+```swift
+Image(systemName: "heart.fill")
+```
+
+```swift
+Label("Share", systemImage: "square.and.arrow.up")
+```
+
+```swift
+Button {
+  // action
+} label: {
+  Image(systemName: "trash")
+}
+```
+
+### Markdown notes
+
+```md
+- "checkmark.circle"
+- "xmark.circle"
+- "folder"
+- "doc.text"
+```
+
+### Plugin development
+
+```lua
+local icon = "checkmark.circle"
+```
+
+## Commands
+
+| Command                    | Description                  |
+| -------------------------- | ---------------------------- |
+| `:SFSymbols`               | Open the configured picker   |
+| `:SFSymbols auto`          | Resolve picker automatically |
+| `:SFSymbols telescope`     | Open with Telescope          |
+| `:SFSymbols fzf_lua`       | Open with fzf-lua            |
+| `:SFSymbols snacks`        | Open with snacks.nvim        |
+| `:SFSymbols vim_ui_select` | Open with `vim.ui.select`    |
+
+## Lua API
+
+### `setup(opts)`
+
+Configures the plugin.
+
+```lua
+require("sf-symbols").setup({
+  picker = "auto",
+  insert_quotes = true,
+})
+```
+
+### `pick(opts)`
+
+Opens the symbol picker.
+
+```lua
+require("sf-symbols").pick()
+```
+
+With options:
+
+```lua
+require("sf-symbols").pick({
+  picker = "telescope",
+})
+```
+
+## Recommended setup
+
+For most users:
+
+```lua
+{
+  "dfdezmonteiro/sf-symbols.nvim",
+  config = function()
+    require("sf-symbols").setup({
+      picker = "auto",
+      insert_quotes = true,
+    })
+
+    vim.keymap.set("n", "<leader>ss", function()
+      require("sf-symbols").pick()
+    end, {
+      desc = "Search SF Symbols",
+    })
+  end,
+}
+```
+
+## Notes
+
+This plugin searches SF Symbol names. It does not render SF Symbols inside Neovim.
+
+Availability of a specific SF Symbol may depend on the Apple platform version being targeted by your project. Always verify symbol availability in Apple’s official SF Symbols app or Apple documentation when targeting older iOS, macOS, watchOS, tvOS, or visionOS versions.
 
 ## License
 
