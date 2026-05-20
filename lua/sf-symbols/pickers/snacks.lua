@@ -18,21 +18,32 @@ function M.pick(opts)
     title = "SF Symbols",
     items = items,
 
-    format = function(item)
-      return {
-        { item.text },
-      }
+    preview = function()
+      return false
     end,
+
+    layout = {
+      preset = "select",
+      hidden = { "preview" },
+    },
+
+    format = "text",
 
     confirm = function(picker, item)
       picker:close()
-      core.on_select(item.text, "insert")
+
+      if item then
+        core.on_select(item.text, "insert")
+      end
     end,
 
     actions = {
       copy = function(picker, item)
         picker:close()
-        core.on_select(item.text, "copy")
+
+        if item then
+          core.on_select(item.text, "copy")
+        end
       end,
     },
 
@@ -40,17 +51,19 @@ function M.pick(opts)
       input = {
         keys = {
           ["<C-y>"] = { "copy", mode = { "i", "n" } },
+
+          -- Desactivamos toggle preview.
+          ["<M-p>"] = false,
         },
       },
 
       list = {
         keys = {
           ["<C-y>"] = "copy",
-        },
-      },
 
-      preview = {
-        enabled = false,
+          -- Desactivamos toggle preview.
+          ["<M-p>"] = false,
+        },
       },
     },
   })
