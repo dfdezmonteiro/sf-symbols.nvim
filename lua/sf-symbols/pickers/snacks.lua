@@ -5,32 +5,34 @@ local M = {}
 function M.pick(opts)
   opts = opts or {}
 
+  local Snacks = require("snacks")
+
   local items = vim.tbl_map(function(symbol)
     return {
       text = symbol,
-      symbol = symbol,
     }
   end, core.symbols())
 
-  require("snacks").picker.pick({
+  Snacks.picker.pick({
+    source = "sf-symbols",
     title = "SF Symbols",
     items = items,
 
     format = function(item)
       return {
-        { item.symbol },
+        { item.text },
       }
     end,
 
     confirm = function(picker, item)
       picker:close()
-      core.on_select(item.symbol, "insert")
+      core.on_select(item.text, "insert")
     end,
 
     actions = {
       copy = function(picker, item)
         picker:close()
-        core.on_select(item.symbol, "copy")
+        core.on_select(item.text, "copy")
       end,
     },
 
@@ -39,6 +41,16 @@ function M.pick(opts)
         keys = {
           ["<C-y>"] = { "copy", mode = { "i", "n" } },
         },
+      },
+
+      list = {
+        keys = {
+          ["<C-y>"] = "copy",
+        },
+      },
+
+      preview = {
+        enabled = false,
       },
     },
   })
